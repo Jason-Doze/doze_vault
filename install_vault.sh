@@ -22,12 +22,21 @@ else
   gpg --no-default-keyring --keyring /usr/share/keyrings/hashicorp-archive-keyring.gpg --fingerprint
 fi
 
-# Add Hashi repo and install Vault
+# Add Hashi repo
 if [ -f /etc/apt/sources.list.d/hashicorp.list ]
+then
+  echo -e "\n\033[1;32m==== Hashicorp repo present ====\033[0m\n"
+else
+  echo -e "\n\033[1;33m==== Adding Hashicorp repo ====\033[0m\n"
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+  sudo apt update
+fi
+
+# Install Vault
+if ( which vault > /dev/null )
 then
   echo -e "\n\033[1;32m==== Vault present ====\033[0m\n"
 else
-  echo -e "\n\033[1;33m==== Adding Hashicorp repo and installing Vault ====\033[0m\n"
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-  sudo apt update && sudo apt install vault
+  echo -e "\n\033[1;33m==== Installing Vault ====\033[0m\n"
+  sudo apt install vault
 fi

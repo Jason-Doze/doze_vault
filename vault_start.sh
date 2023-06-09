@@ -4,6 +4,9 @@
 
 sudo apt update
 
+# Set VAULT_ADDR environment variable
+export VAULT_ADDR='http://127.0.0.1:8200'
+
 # Install JQ
 if ( which jq > /dev/null )
 then 

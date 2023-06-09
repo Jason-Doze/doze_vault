@@ -70,7 +70,7 @@ do
   fi
 done
 
-# Check Vault initialization status
+# Initialize Vault
 if [ "$(vault status -format=json | jq -r '.initialized')" = "true" ]
 then 
   echo -e "\n\033[1;32m==== Vault is already initialized ====\033[0m\n"
@@ -79,7 +79,7 @@ else
   vault operator init
 fi
 
-# Check if Vault is sealed
+# Unseal Vault
 if [ "$(vault status -format=json | jq -r '.sealed')" = "false" ]
 then 
   echo -e "\n\033[1;32m==== Vault is unsealed ====\033[0m\n"

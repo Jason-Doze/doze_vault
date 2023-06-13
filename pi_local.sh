@@ -5,19 +5,13 @@
 echo -e "\n\033[1;32m==== Validate Pi server is running ====\033[0m\n"
 while true
 do
-  if ( ping -c 1  "$PI_HOST" > /dev/null 2>&1 )
+  if ( ssh -o ConnectTimeout=3 -o StrictHostKeyChecking=no -T "$USER@$PI_HOST" 'exit' &> /dev/null )
   then
-    if ( ssh -T -o StrictHostKeyChecking=no "$USER@$PI_HOST" 'exit' )
-    then
-      echo -e "\n\033[1;32m==== Server is running ====\033[0m\n"
-      break
-    else
-      printf "\033[31m.\033[0m"
-      sleep 0.1
-    fi
+    echo -e "\n\033[1;32m==== Server is running ====\033[0m\n"
+    break
   else
     printf "\033[31m.\033[0m"
-    sleep 0.1
+    sleep 2
   fi
 done
 
@@ -45,8 +39,8 @@ rsync -av -e "ssh -o StrictHostKeyChecking=no" --delete --exclude={'.git','.giti
 
 # Use SSH to execute commands on the Pi server
 echo -e "\n\033[1;32m==== Executing commands on Pi Server ====\033[0m\n"
-ssh -t -o StrictHostKeyChecking=no $USER@$PI_HOST 'cd doze_vault && bash install_vault.sh && bash vault_start.sh'
+# ssh -t -o StrictHostKeyChecking=no $USER@$PI_HOST 'cd doze_vault && bash vault_install.sh'
 
 # SSH into Pi server
 echo -e "\n\033[1;32m==== SSH into Pi ====\033[0m\n"
-ssh -o StrictHostKeyChecking=no $USER@$PI_HOST 
+ssh -t -o StrictHostKeyChecking=no $USER@$PI_HOST 'cd doze_vault && bash vault_install.sh && bash vault_start.sh && bash vault_secrets.sh && bash' 

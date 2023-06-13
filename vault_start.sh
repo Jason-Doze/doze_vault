@@ -2,11 +2,6 @@
 
 # This script updates the package list, sets the VAULT_ADDR environment variable, installs Jq, creates a Vault data directory, configures the Vault server, validates the Vault server is running, initializes Vault, and unseals Vault.
 
-sudo apt update
-
-# Set VAULT_ADDR environment variable
-export VAULT_ADDR='http://127.0.0.1:8200'
-
 # Install JQ
 if ( which jq > /dev/null )
 then 
@@ -14,6 +9,16 @@ then
 else
   echo -e "\n\033[1;33m==== Installing JQ ====\033[0m\n"
   sudo apt install -y jq
+fi
+
+# Export VAULT_ADDR
+if ( grep -q "export VAULT_ADDR='http://127.0.0.1:8200'" ~/.bashrc )
+then
+  echo -e "\n\033[1;33m==== VAULT_ADDR in bashrc ====\033[0m\n"
+else
+  echo -e "\n\033[1;32m==== Adding VAULT_ADDR to bashrc ====\033[0m\n"
+  echo "export VAULT_ADDR='http://127.0.0.1:8200'" >> ~/.bashrc
+  export VAULT_ADDR='http://127.0.0.1:8200'
 fi
 
 # Create Vault data directory
@@ -43,7 +48,7 @@ listener "tcp" {
 }
 
 api_addr = "http://127.0.0.1:8200"
-cluster_addr = "http://127.0.0.1:8201"
+cluster_addr = "https://127.0.0.1:8201"
 ui = true
 EOF
 fi
@@ -54,7 +59,7 @@ then
   echo -e "\n\033[1;32m==== Vault server is started ====\033[0m\n"
 else
   echo -e "\n\033[1;33m==== Starting Vault server ====\033[0m\n"
-  nohup vault server -config=/home/jasondoze/doze_vault/config.hcl > /dev/null 2>&1 &
+  nohup vault server -config=/home/jasondoze/doze_vault/config.hcl > vault.log 2>&1 &
 fi
   
 # Wait for the Vault server to start
@@ -84,6 +89,43 @@ if [ "$(vault status -format=json | jq -r '.sealed')" = "false" ]
 then 
   echo -e "\n\033[1;32m==== Vault is unsealed ====\033[0m\n"
 else
-  echo -e "\n\033[1;33m==== Vault is sealed. Unsealing now... ====\033[0m\n"
-  vault operator unseal
+  echo -e "\n\033[1;33m==== Unsealing Vault  ====\033[0m\n"
+  # Outer loop cycles through each of the 5 keys
+  for i in {1..5}
+  do
+    # Inner loop allows up to 5 attempts to unseal Vault
+    for attempt in {1..5}
+    do
+      echo -e "\n\033[1;33m==== Enter unseal key (attempt $attempt) ====\033[0m\n"
+      if ( vault operator unseal )
+      then
+        echo -e "\n\033[1;32m==== Unseal key applied ====\033[0m\n"
+        # Validate Vault is unsealed after each attempt
+        if [ "$(vault status -format=json | jq -r '.sealed')" = "false" ]
+        then 
+          echo -e "\n\033[1;32m==== Vault is unsealed ====\033[0m\n"
+          # Break nested loops when Vault is unsealed
+          break 2  
+        fi
+      else
+        echo -e "\n\033[1;31m==== Incorrect key, try again ====\033[0m\n"
+      fi
+    done
+  done
+  # Validate Vault sealed after all attempts
+  if [ "$(vault status -format=json | jq -r '.sealed')" = "true" ]
+  then
+    echo -e "\n\033[1;31m==== Vault could not be unsealed ====\033[0m\n"
+    # Exit with error status if Vault could not be unsealed
+    exit 1  
+  fi
+fi
+
+# Login to Vault
+if [ "$(vault status -format=json | jq -r '.sealed')" = "false" ]
+then 
+  echo -e "\n\033[1;32m==== Logging into Vault, enter root token ====\033[0m\n"
+  vault login
+else
+  echo -e "\n\033[1;31m==== Vault is sealed, cannot login ====\033[0m\n"
 fi

@@ -1,23 +1,23 @@
 #!/bin/bash
 
-# This script updates the package list, installs Gpg, downloads the Hashicorp signing key, adds the Hashicorp repository and installs Vault.
+# This script updates the package list, installs GPG, downloads the Hashicorp signing key, adds the Hashicorp repository and installs Vault.
 
 # Update Apt
-if (( $(date +%s) - $(stat -c %Y /var/lib/apt/periodic/update-success-stamp) > 24*60*60 ))
+if ( apt-cache show gpg &> /dev/null )
 then
+  echo -e "\n\033[1;32m==== GPG in cache ====\033[0m\n"
+else
   echo -e "\n\033[1;33m==== Updating Apt ====\033[0m\n"
   sudo apt update 
-else
-  echo -e "\n\033[1;32m==== Apt updated ====\033[0m\n"
 fi
 
-# Install Gpg
-if ( which gpg > /dev/null )
+# Install GPG
+if ( which gpg > /dev/null ) 
 then
-  echo -e "\n\033[1;32m==== Gpg present ====\033[0m\n"
+  echo -e "\n\033[1;32m==== GPG installed ====\033[0m\n"
 else
-  echo -e "\n\033[1;33m==== Installing Gpg ====\033[0m\n"
-  sudo apt install gpg
+  echo -e "\n\033[1;33m==== Installing GPG ====\033[0m\n"
+  sudo apt install -y gpg
 fi
 
 # Download signing key
@@ -38,14 +38,24 @@ else
   echo -e "\n\033[1;33m==== Adding Hashicorp repo ====\033[0m\n"
   echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] \
   https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+fi
+
+# Update Apt
+if ( apt-cache show vault &> /dev/null )
+then
+  echo -e "\n\033[1;32m==== Vault in cache ====\033[0m\n"
+else
+  echo -e "\n\033[1;33m==== Updating Apt ====\033[0m\n"
   sudo apt update
 fi
 
 # Install Vault
-if ( which vault > /dev/null )
+if ( which vault > /dev/null ) 
 then
-  echo -e "\n\033[1;32m==== Vault present ====\033[0m\n"
+  echo -e "\n\033[1;32m==== Vault installed ====\033[0m\n"
 else
   echo -e "\n\033[1;33m==== Installing Vault ====\033[0m\n"
-  sudo apt install vault
+  sudo apt install -y vault
 fi
+
+

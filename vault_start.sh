@@ -1,11 +1,20 @@
 #!/bin/bash
 
-# This script updates the package list, sets the VAULT_ADDR environment variable, installs Jq, creates a Vault data directory, configures the Vault server, validates the Vault server is running, initializes Vault, and unseals Vault.
+# This script updates the package list, sets the VAULT_ADDR environment variable, installs JQ, creates a Vault data directory, configures the Vault server, validates the Vault server is running, initializes Vault, and unseals Vault.
+
+# Update Apt
+if ( apt-cache show jq &> /dev/null )
+then
+  echo -e "\n\033[1;32m==== JQ in cache ====\033[0m\n"
+else
+  echo -e "\n\033[1;33m==== Updating Apt ====\033[0m\n"
+  sudo apt update 
+fi
 
 # Install JQ
-if ( which jq > /dev/null )
-then 
-  echo -e "\n\033[1;32m==== JQ is present ====\033[0m\n"
+if ( which jq > /dev/null ) 
+then
+  echo -e "\n\033[1;32m==== JQ installed ====\033[0m\n"
 else
   echo -e "\n\033[1;33m==== Installing JQ ====\033[0m\n"
   sudo apt install -y jq
@@ -54,24 +63,24 @@ EOF
 fi
 
 # Start the Vault server
-if ( nc -z 127.0.0.1 8200 > /dev/null 2>&1 )
+if ( nc -z 127.0.0.1 8200 &> /dev/null )
 then 
   echo -e "\n\033[1;32m==== Vault server is started ====\033[0m\n"
 else
   echo -e "\n\033[1;33m==== Starting Vault server ====\033[0m\n"
-  nohup vault server -config=/home/jasondoze/doze_vault/config.hcl > vault.log 2>&1 &
+  nohup vault server -config=/home/jasondoze/doze_vault/config.hcl &> vault.log &
 fi
   
 # Wait for the Vault server to start
 while true
 do
-  if ( nc -z 127.0.0.1 8200 > /dev/null 2>&1 )
+  if ( nc -z 127.0.0.1 8200 &> /dev/null )
   then
     echo -e "\n\033[1;32m==== Vault server is running ====\033[0m\n"
     break
   else
     printf "\033[31m.\033[0m"
-    sleep 0.1
+    sleep 2
   fi
 done
 
@@ -90,8 +99,8 @@ then
   echo -e "\n\033[1;32m==== Vault is unsealed ====\033[0m\n"
 else
   echo -e "\n\033[1;33m==== Unsealing Vault  ====\033[0m\n"
-  # Outer loop cycles through each of the 5 keys
-  for i in {1..5}
+  # Outer loop cycles 3 times
+  for i in {1..3}
   do
     # Inner loop allows up to 5 attempts to unseal Vault
     for attempt in {1..5}
@@ -122,10 +131,10 @@ else
 fi
 
 # Login to Vault
-if [ "$(vault status -format=json | jq -r '.sealed')" = "false" ]
+if [ "$(vault status -format=json | jq -r '.sealed')" = "true" ]
 then 
+  echo -e "\n\033[1;31m==== Vault is sealed, cannot login ====\033[0m\n"
+else
   echo -e "\n\033[1;32m==== Logging into Vault, enter root token ====\033[0m\n"
   vault login
-else
-  echo -e "\n\033[1;31m==== Vault is sealed, cannot login ====\033[0m\n"
 fi

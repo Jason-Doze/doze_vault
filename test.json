@@ -1,0 +1,26 @@
+{
+  "users": [
+  {
+    "id": 1,
+    "name": "Johnny Rotten",
+    "email": "johnlydon.@aol.com"
+  },
+  {
+    "id": 2,
+    "name": "Sid Vicous",
+    "email": "john.ritchie@yahoo.com"
+  }
+],
+"config": {
+  "max_connections": 100,
+  "timeout": 60,
+  "logging_enabled": true
+},
+"secrets": {
+  "database": {
+    "username": "bingo_gringo",
+    "password": "password123"
+  },
+  "api_key": "04e79719-3b26-666-ad8b-1148f2c80b90"
+}
+}
